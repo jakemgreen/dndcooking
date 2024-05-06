@@ -5,14 +5,7 @@ import customtkinter
 import tkinter.messagebox
 
 # constant variables
-TRAINING_LIST = [
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-]
+TRAINING_LIST = [str(num) for num in range(6)]
 
 SPICE_LIST = [
     "0-3",
@@ -78,8 +71,8 @@ quality_items = []
 quality_box_list = []
 starting_ingredient_count = 0
 final_ingredient_count = 0
-spice_dc = 0
-player_dc = 0
+spice_mod = 0
+player_roll = 0
 
 
 def main():
@@ -110,17 +103,17 @@ def main():
 
     def calculate_training():
         global training_results
-        training_dc = 0
+        training_mod = 0
 
         for box in training_box_list:
-            training_dc += int(box.get())
-        return training_dc
+            training_mod += int(box.get())
+        return training_mod
 
     def calculate_spice(spice_amount):
         dc = SPICE_DICT[spice_amount]
         return dc
 
-    def get_ingredient_dc():
+    def get_ingredient_mod():
         ingredient_total = 0
         try:
             for item in ingredient_items:
@@ -142,7 +135,7 @@ def main():
             return 20
         return 22
 
-    def get_quality_dc(quality):
+    def get_quality_mod(quality):
         if quality == "☆":
             return 0
         elif quality == "☆☆":
@@ -156,10 +149,10 @@ def main():
         return "Error"
 
     def calculate_dc():
-        global starting_ingredient_count, final_ingredient_count, player_dc, spice_dc
+        global starting_ingredient_count, final_ingredient_count, player_roll, spice_mod
         try:
             # adjust player dc
-            player_dc = int(player_dc_entry.get())
+            player_roll = int(player_roll_entry.get())
         except (TypeError, ValueError):
             tkinter.messagebox.askokcancel(title="Player DC Error", message="Player DC is not valid, please re-enter.")
             return
@@ -169,15 +162,15 @@ def main():
             training_results.clear()
             training_dc = int(calculate_training())
             # add training dc to player dc
-            player_dc += training_dc
+            player_roll += training_dc
         except ValueError:
             tkinter.messagebox.askokcancel(title="Training Error", message="Please select all training bonuses.")
             return
 
         try:
             # add spice to ingredient list if not 0
-            spice_dc = int(calculate_spice(spice_combo_box.get()))
-            if spice_dc != 0:
+            spice_mod = int(calculate_spice(spice_combo_box.get()))
+            if spice_mod != 0:
                 final_ingredient_count = starting_ingredient_count + 1
             else:
                 final_ingredient_count = starting_ingredient_count
@@ -194,18 +187,19 @@ def main():
             ingredient_count_dc = get_ingredient_count_dc()
 
             # get ingredient dc
-            ingredient_dc = get_ingredient_dc()
+            ingredient_dc = get_ingredient_mod()
 
-            # get quality dc
+            # get quality dc and add to player roll
             highest_quality = ""
             for quality in quality_items:
                 if len(quality) > len(highest_quality):
                     highest_quality = quality
-            quality_dc = int(get_quality_dc(highest_quality))
+            quality_mod = int(get_quality_mod(highest_quality))
+            player_roll += quality_mod
 
-            dm_dc = spice_dc + ingredient_count_dc + ingredient_dc + quality_dc
+            dm_dc = spice_mod + ingredient_count_dc + ingredient_dc
 
-            total_dc = player_dc - dm_dc
+            total_dc = player_roll - dm_dc
 
             tkinter.messagebox.askokcancel(title="Results", message=f"{total_dc}\n{get_results(total_dc)}")
 
@@ -249,7 +243,7 @@ def main():
 
             calculate_button.grid(row=starting_ingredient_count + 2, column=3, padx=20, pady=5)
             spice_combo_box.grid(row=starting_ingredient_count + 1, column=3, padx=10, pady=5)
-            player_dc_entry.grid(row=0, column=4, padx=10, pady=5)
+            player_roll_entry.grid(row=0, column=4, padx=10, pady=5)
             reset_button.grid(row=starting_ingredient_count + 3, column=0, padx=10, pady=5)
 
         except ValueError:
@@ -273,7 +267,7 @@ def main():
     spice_combo_box = customtkinter.CTkComboBox(frame, width=185, values=SPICE_LIST)
     spice_combo_box.set("Select Spice Amount")
 
-    player_dc_entry = customtkinter.CTkEntry(frame, placeholder_text="Player DC")
+    player_roll_entry = customtkinter.CTkEntry(frame, placeholder_text="Player Roll")
 
     calculate_button = customtkinter.CTkButton(frame, text="Calculate DC", command=calculate_dc)
 
